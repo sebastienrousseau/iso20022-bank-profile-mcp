@@ -19,6 +19,7 @@ python examples/<name>.py
 | [`06_validate_bad_definition.py`](06_validate_bad_definition.py) | Reject a rule pack that uses an unknown assertion verb |
 | [`07_apply_conditional_rule.py`](07_apply_conditional_rule.py) | Apply `equals:` / `if:` rules via the engine |
 | [`08_register_bank_pack.py`](08_register_bank_pack.py) | Validate and register a bank-specific rule pack, then lint |
+| [`09_premium_entitlement.py`](09_premium_entitlement.py) | Premium-profile gating unlocked via an OAuth scope or the env allowlist |
 
 ## Installation
 
