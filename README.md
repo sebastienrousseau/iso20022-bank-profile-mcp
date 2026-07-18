@@ -22,8 +22,9 @@ whose readiness gateway can consume the profiles this server serves.
 > tomorrow. `iso20022-bank-profile-mcp` turns those scheme rules into
 > versioned, agent-callable clearing profiles: `list_profiles` and
 > `get_profile` serve them, `lint_payload` evaluates a payload against one,
-> and `validate_profile_definition` vets a bank-supplied rule pack. **v0.0.1**,
-> stdio transport, 4 read-only tools, Python 3.10+.
+> and `validate_profile_definition` vets a bank-supplied rule pack. **v0.0.2**,
+> stdio by default (plus an optional OAuth 2.1 HTTP transport), 4 read-only
+> tools, premium rule-pack entitlement gating, Python 3.10+.
 
 ## Contents
 
@@ -32,6 +33,7 @@ whose readiness gateway can consume the profiles this server serves.
 - [Install](#install)
 - [Quick Start](#quick-start)
 - [Tools](#tools)
+- [HTTP transport & authentication](#http-transport--authentication)
 - [How it fits the suite](#how-it-fits-the-suite)
 - [Open-core vs premium](#open-core-vs-premium)
 - [When not to use iso20022-bank-profile-mcp](#when-not-to-use-iso20022-bank-profile-mcp)
@@ -190,10 +192,53 @@ error they return an `{"error": ...}` payload rather than raising. Every tool
 is a pure, local, read-only, idempotent, closed-world lookup — no network, no
 sub-servers.
 
-- `list_profiles` — List the available clearing profiles as lightweight summaries (`profile_id`, `market_practice`, `supported_messages`, `rule_count`). Use it to discover the `profile_id` values the other tools accept.
-- `get_profile` — Return one clearing profile in full, including its rule bodies.
-- `lint_payload` — Evaluate a raw ISO 20022 payload against a clearing profile and return the findings (a compliant payload yields none).
+- `list_profiles` — List the available clearing profiles as lightweight summaries (`profile_id`, `market_practice`, `tier`, `entitled`, `supported_messages`, `rule_count`). Use it to discover the `profile_id` values the other tools accept and see which ones the current caller is entitled to.
+- `get_profile` — Return one clearing profile in full, including its rule bodies. On a **premium** profile the caller must be entitled, otherwise it returns a `BP_NOT_ENTITLED` error (see [Open-core vs premium](#open-core-vs-premium)).
+- `lint_payload` — Evaluate a raw ISO 20022 payload against a clearing profile and return the findings (a compliant payload yields none). Like `get_profile`, a **premium** profile requires an entitlement or it returns `BP_NOT_ENTITLED`.
 - `validate_profile_definition` — Validate a bank-supplied profile / rule-pack definition supplied as raw JSON, confirming its shape and that every rule uses a known assertion verb.
+
+## HTTP transport & authentication
+
+stdio is the default and needs no authentication — one process per operator,
+launched by the client, no network surface. For **shared, multi-tenant
+deployments** the server also speaks an optional streamable-HTTP transport:
+
+```sh
+iso20022-bank-profile-mcp --transport=http --bind=127.0.0.1:8080
+```
+
+`--bind` defaults to `127.0.0.1:8080` (loopback-only), so exposing the server
+beyond the host is an explicit opt-in (e.g. `--bind=0.0.0.0:8080`). The HTTP
+transport **refuses to start without authentication** — it never serves an
+unauthenticated endpoint. Two auth modes apply, strongest first:
+
+- **OAuth 2.1 resource server (RFC 9728)** — set
+  `ISO20022_BANK_PROFILE_OAUTH_ISSUER` and
+  `ISO20022_BANK_PROFILE_OAUTH_AUDIENCE` (both required), with optional
+  `ISO20022_BANK_PROFILE_OAUTH_JWKS_URL` (defaults to
+  `<issuer>/.well-known/jwks.json`) and `ISO20022_BANK_PROFILE_OAUTH_SCOPES`.
+  Every request must carry `Authorization: Bearer <jwt>`; the token is
+  validated against the JWKS and its `iss` / `aud` / `exp` / `nbf` / required
+  scopes. Failures are rejected `401` / `403` with an RFC 9728
+  `WWW-Authenticate` challenge, and protected-resource metadata is served at
+  `/.well-known/oauth-protected-resource`. This server validates tokens from
+  your existing authorization server (Okta, Auth0, Entra ID, …); running the
+  authorization server is out of scope.
+
+  ```sh
+  ISO20022_BANK_PROFILE_OAUTH_ISSUER=https://auth.example.com \
+  ISO20022_BANK_PROFILE_OAUTH_AUDIENCE=https://mcp.example.com/mcp \
+    iso20022-bank-profile-mcp --transport=http --bind=0.0.0.0:8080
+  ```
+
+- **Static dev-mode token** — set `ISO20022_BANK_PROFILE_TOKEN` to a shared
+  secret; every request must then send `Authorization: Bearer <secret>`. This
+  is a single shared secret with no expiry and no scopes — intended for local
+  development, not production.
+
+An optional `X-MCP-Tenant` request header is forwarded into the tool-visible
+request context for multi-tenant scoping. See
+[`docs/transport.md`](docs/transport.md) for the full setup.
 
 ## How it fits the suite
 
@@ -226,13 +271,38 @@ capabilities are commercial add-ons that plug into the same profile-engine seam
 |---|---|
 | Profile engine + rule mini-language | **Open Source** |
 | Baseline scheme profiles (Generic, CBPR+, SEPA_Instant, FedNow) | **Open Source** |
+| Entitlement gate for premium profiles (tier, scopes, allowlist) | **Open Source** |
 | Bank-specific / proprietary scheme rule packs | **Paid** |
-| Entitlement-gated profile distribution | **Paid** |
 | Stateful profile-version history & audit logs | **Paid** |
 
-The paid tiers are on the [roadmap](ROADMAP.md) (premium rule-pack entitlement
-gating and richer bank rule packs), not in this release. Nothing in the
-open-source tier is time-limited or feature-gated.
+Nothing in the open-source tier is time-limited or feature-gated.
+
+### How the entitlement gate works
+
+Every clearing profile carries a `tier`: `"open"` (the baseline profiles —
+unrestricted and always accessible) or `"premium"` (a licensed rule pack). A
+bundled premium **sample** profile, `ACME_Premium`, ships so you can exercise
+the gate. `list_profiles` reports each profile's `tier` and a per-caller
+`entitled` boolean; `get_profile` and `lint_payload` on a **premium** profile
+return a `BP_NOT_ENTITLED` error unless the caller is entitled.
+
+Entitlement is granted by **either** of two independent sources (ORed):
+
+- **OAuth scope** (HTTP transport) — a token bearing the `profile:premium`
+  scope is entitled to every premium profile; a token bearing
+  `profile:<profile_id>` is entitled to just that one.
+- **Environment allowlist** (stdio / dev) — `ISO20022_BANK_PROFILE_ENTITLEMENTS`
+  lists the premium `profile_id` values (comma- or space-separated) the
+  operator is licensed for; `*` grants all of them.
+
+```sh
+# stdio: license the ACME_Premium sample pack for this process
+ISO20022_BANK_PROFILE_ENTITLEMENTS=ACME_Premium iso20022-bank-profile-mcp
+```
+
+The gate ships in this release; the premium **rule packs** themselves (and
+stateful version history / audit logs) remain a paid, out-of-tree concern.
+See [`docs/profiles.md`](docs/profiles.md) for the full entitlement model.
 
 ## When not to use iso20022-bank-profile-mcp
 
@@ -246,10 +316,11 @@ open-source tier is time-limited or feature-gated.
   of `iso20022-readiness-suite-mcp`, which consumes these profiles. Use it if
   you want scoring, remediation, and bank-response simulation composed
   together.
-- **You need a long-lived network service.** v0.0.1 speaks **stdio only** —
-  one process per operator, launched by the client, no network surface. An
-  HTTP/OAuth transport for shared, multi-tenant deployments is on the
-  [roadmap](ROADMAP.md), not in this release.
+- **You need a long-lived network service without auth.** stdio is the default
+  (one process per operator, no network surface); the optional
+  [HTTP transport](#http-transport--authentication) exists for shared,
+  multi-tenant deployments but always requires authentication (OAuth 2.1 or a
+  static dev-mode token) — it will not serve an unauthenticated endpoint.
 - **You need streaming responses.** Tool calls return whole values, not
   streams.
 
@@ -297,10 +368,11 @@ Vulnerability Reporting, not public issues.
 - [`CHANGELOG.md`](CHANGELOG.md) — release notes
 - [`SECURITY.md`](SECURITY.md) — disclosure + supported versions
 - [`SUPPORT.md`](SUPPORT.md) — how to get help
-- [`ROADMAP.md`](ROADMAP.md) — what's next (richer bank rule packs, HTTP transport, premium entitlement gating)
+- [`ROADMAP.md`](ROADMAP.md) — what's shipped (HTTP transport, premium entitlement gating) and what's next (richer bank rule packs)
 - [`MAINTAINERS.md`](MAINTAINERS.md) — who can merge
 - [`docs/quickstart.md`](docs/quickstart.md) — 10-minute install → first conversation
-- [`docs/profiles.md`](docs/profiles.md) — the clearing profiles, the rule mini-language, and how premium rule packs plug in
+- [`docs/profiles.md`](docs/profiles.md) — the clearing profiles, the rule mini-language, premium rule packs, and the entitlement gate
+- [`docs/transport.md`](docs/transport.md) — the optional HTTP transport and OAuth 2.1 setup
 - [`glama.json`](glama.json) — Glama directory manifest
 
 ---

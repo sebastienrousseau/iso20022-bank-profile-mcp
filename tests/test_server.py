@@ -53,9 +53,28 @@ def test_list_profiles_tool() -> None:
     """``list_profiles`` returns a JSON-ready summary per profile."""
     profiles = server_mod.list_profiles()
     ids = {p["profile_id"] for p in profiles}
-    assert ids == {"CBPR+", "FedNow", "SEPA_Instant", "Generic"}
+    assert ids == {
+        "CBPR+",
+        "FedNow",
+        "SEPA_Instant",
+        "Generic",
+        "ACME_Premium",
+    }
     cbpr = next(p for p in profiles if p["profile_id"] == "CBPR+")
     assert cbpr["rule_count"] == 2
+
+
+def test_list_profiles_marks_tier_and_entitlement(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Open profiles are entitled; premium is marked and gated by default."""
+    monkeypatch.delenv("ISO20022_BANK_PROFILE_ENTITLEMENTS", raising=False)
+    profiles = server_mod.list_profiles()
+    by_id = {p["profile_id"]: p for p in profiles}
+    assert by_id["CBPR+"]["tier"] == "open"
+    assert by_id["CBPR+"]["entitled"] is True
+    assert by_id["ACME_Premium"]["tier"] == "premium"
+    assert by_id["ACME_Premium"]["entitled"] is False
 
 
 # --------------------------------------------------------------------------- #
@@ -146,3 +165,33 @@ def test_main_runs_server(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(server_mod.server, "run", lambda: called.append(True))
     server_mod.main([])
     assert called == [True]
+
+
+def test_main_transport_http(monkeypatch: pytest.MonkeyPatch) -> None:
+    """``--transport=http`` hands off to the HTTP transport with the bind."""
+    from iso20022_bank_profile_mcp.http import transport as transport_mod
+
+    calls: list[tuple[object, str]] = []
+    monkeypatch.setattr(
+        transport_mod,
+        "run_http",
+        lambda srv, bind: calls.append((srv, bind)),
+    )
+    server_mod.main(["--transport=http", "--bind=0.0.0.0:9000"])
+    assert calls == [(server_mod.server, "0.0.0.0:9000")]
+
+
+def test_main_transport_http_default_bind(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """``--transport=http`` with no ``--bind`` uses the default bind."""
+    from iso20022_bank_profile_mcp.http import transport as transport_mod
+
+    calls: list[tuple[object, str]] = []
+    monkeypatch.setattr(
+        transport_mod,
+        "run_http",
+        lambda srv, bind: calls.append((srv, bind)),
+    )
+    server_mod.main(["--transport=http"])
+    assert calls == [(server_mod.server, transport_mod.DEFAULT_BIND)]

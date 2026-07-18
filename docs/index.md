@@ -16,16 +16,18 @@ JSON-serialisable data on every path — never a traceback.
 ## Reference
 
 - [Clearing profiles](profiles.md) — the baseline profiles (`Generic`,
-  `CBPR+`, `SEPA_Instant`, `FedNow`), the rule mini-language, and the
-  premium rule-pack seam.
+  `CBPR+`, `SEPA_Instant`, `FedNow`), the rule mini-language, the premium
+  rule-pack seam, and the entitlement gate.
+- [HTTP transport](transport.md) — the optional streamable-HTTP transport and
+  its OAuth 2.1 resource-server authentication.
 
 ## The tools
 
 | Tool | What it does |
 | --- | --- |
-| `list_profiles` | List the available clearing profiles as lightweight summaries. |
-| `get_profile` | Return one clearing profile in full, including its rule bodies. |
-| `lint_payload` | Evaluate a raw payload against a profile and return findings. |
+| `list_profiles` | List the available clearing profiles as lightweight summaries (including each profile's `tier` and whether the caller is `entitled`). |
+| `get_profile` | Return one clearing profile in full, including its rule bodies (premium profiles require an entitlement). |
+| `lint_payload` | Evaluate a raw payload against a profile and return findings (premium profiles require an entitlement). |
 | `validate_profile_definition` | Validate a bank-supplied profile / rule-pack definition (raw JSON). |
 
 Every tool is a pure, local, read-only, idempotent, closed-world lookup.

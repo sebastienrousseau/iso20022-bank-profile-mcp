@@ -80,10 +80,22 @@ def test_assertion_is_known() -> None:
 # --------------------------------------------------------------------------- #
 # Loading & registration                                                     #
 # --------------------------------------------------------------------------- #
-def test_from_bundled_loads_four_profiles(engine: ProfileEngine) -> None:
-    """The four baseline profiles ship bundled with the package."""
+def test_from_bundled_loads_five_profiles(engine: ProfileEngine) -> None:
+    """The five profiles (four open + one premium) ship bundled."""
     ids = {p.profile_id for p in engine.list_profiles()}
-    assert ids == {"CBPR+", "FedNow", "SEPA_Instant", "Generic"}
+    assert ids == {
+        "CBPR+",
+        "FedNow",
+        "SEPA_Instant",
+        "Generic",
+        "ACME_Premium",
+    }
+
+
+def test_from_bundled_marks_premium_tier(engine: ProfileEngine) -> None:
+    """Open baseline profiles are ``open``; ACME_Premium is ``premium``."""
+    assert engine.get("CBPR+").tier == "open"
+    assert engine.get("ACME_Premium").tier == "premium"
 
 
 class _FakeEntry:

@@ -100,12 +100,44 @@ Once registered, a pack's `profile_id` appears in `list_profiles` and is
 accepted by `get_profile` and `lint_payload` — the tool surface does not
 change.
 
-On the [roadmap](https://github.com/sebastienrousseau/iso20022-bank-profile-mcp/blob/main/ROADMAP.md),
-the higher-tier packs are gated behind an **entitlement claim** (so
-operators license the scheme packs they need). The sibling
-`iso20022-readiness-suite-mcp` gateway consumes whatever profiles this
-server serves. Everything in the open-source tier — the four bundled
-profiles and the engine itself — is unrestricted and not feature-gated.
+The sibling `iso20022-readiness-suite-mcp` gateway consumes whatever
+profiles this server serves. Everything in the open-source tier — the
+bundled open profiles and the engine itself — is unrestricted and not
+feature-gated.
+
+## Entitlement & premium packs
+
+Every profile carries a **`tier`**: `"open"` (the baseline profiles —
+unrestricted and always accessible) or `"premium"` (a licensed rule pack).
+A bundled premium **sample** profile, `ACME_Premium` (`tier: premium`),
+ships so the gate can be exercised without a real licensed pack.
+
+- `list_profiles` reports each profile's `tier` and a per-caller
+  **`entitled`** boolean, so a client can see which packs the current
+  caller may use before calling anything else.
+- `get_profile` and `lint_payload` on a **premium** profile return a
+  `BP_NOT_ENTITLED` error unless the caller is entitled. Open profiles are
+  always accessible.
+
+Entitlement is resolved from two independent sources so the same server
+works under both transports; **either** one grants access (they are ORed):
+
+| Source | Transport | How to grant |
+| --- | --- | --- |
+| **OAuth scope** | HTTP | A token bearing `profile:premium` is entitled to *every* premium profile; a token bearing `profile:<profile_id>` is entitled to just that one. |
+| **Environment allowlist** | stdio / dev | `ISO20022_BANK_PROFILE_ENTITLEMENTS` lists the premium `profile_id` values (comma- or space-separated) the operator is licensed for; `*` grants all. |
+
+Under stdio, for example, licensing the `ACME_Premium` sample pack for one
+process is just:
+
+```sh
+ISO20022_BANK_PROFILE_ENTITLEMENTS=ACME_Premium iso20022-bank-profile-mcp
+```
+
+Under the HTTP transport the caller's OAuth token carries the granting
+scope instead — see [HTTP transport & authentication](transport.md).
+The open-source tier — the bundled open profiles and the engine itself —
+is never gated; only `premium`-tier profiles require an entitlement.
 
 ## Choosing a profile
 

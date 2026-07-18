@@ -34,10 +34,16 @@ from mcp.server.fastmcp import FastMCP
 from mcp.types import ToolAnnotations
 from pydantic import Field
 
-from iso20022_bank_profile_mcp import __version__
+from iso20022_bank_profile_mcp import __version__, entitlement
 from iso20022_bank_profile_mcp.engine import ProfileEngine
-from iso20022_bank_profile_mcp.errors import BankProfileError, ErrorDetail
+from iso20022_bank_profile_mcp.errors import (
+    BankProfileError,
+    ErrorDetail,
+    NotEntitledError,
+)
+from iso20022_bank_profile_mcp.http.context import current_scopes
 from iso20022_bank_profile_mcp.models import (
+    ClearingProfile,
     LintRequest,
     LintResponse,
     ProfileSummary,
@@ -69,6 +75,35 @@ def _as_detail(exc: Exception) -> ErrorDetail:
     return ErrorDetail(code="BP_ERROR", explanation=f"Unexpected error: {exc}")
 
 
+def _entitled(profile: ClearingProfile) -> bool:
+    """Return whether the current caller may use ``profile``.
+
+    Open profiles are always permitted; premium profiles require a granting
+    OAuth scope (HTTP) or the environment entitlement allowlist (stdio).
+    """
+    return entitlement.is_entitled(
+        profile.profile_id,
+        profile.tier,
+        current_scopes(),
+        entitlement.allowlist_from_env(),
+    )
+
+
+def _require_entitled(profile: ClearingProfile) -> None:
+    """Raise :class:`NotEntitledError` when ``profile`` is not accessible."""
+    if not _entitled(profile):
+        raise NotEntitledError(
+            f"Profile {profile.profile_id!r} is premium and requires an "
+            "entitlement (OAuth scope or environment allowlist).",
+            locator=profile.profile_id,
+            context={
+                "tier": profile.tier,
+                "required_scope": entitlement.PREMIUM_SCOPE,
+                "entitlements_env": entitlement.ENTITLEMENTS_ENV,
+            },
+        )
+
+
 @server.tool(title="List clearing profiles", annotations=_PURE_READ)
 def list_profiles() -> list[dict[str, Any]]:
     """List the available clearing profiles as lightweight summaries.
@@ -79,6 +114,8 @@ def list_profiles() -> list[dict[str, Any]]:
         ProfileSummary(
             profile_id=p.profile_id,
             market_practice=p.market_practice,
+            tier=p.tier,
+            entitled=_entitled(p),
             supported_messages=p.supported_messages,
             rule_count=len(p.custom_rules),
         )
@@ -99,7 +136,9 @@ def get_profile(
         profile_id: The clearing profile identifier.
     """
     try:
-        return _engine.get(profile_id).model_dump(mode="json")
+        profile = _engine.get(profile_id)
+        _require_entitled(profile)
+        return profile.model_dump(mode="json")
     except Exception as exc:  # noqa: BLE001 - boundary: return data, not trace
         return {"error": _as_detail(exc).model_dump(mode="json")}
 
@@ -123,6 +162,7 @@ def lint_payload(
         payload_content=payload_content, profile_id=profile_id
     )
     try:
+        _require_entitled(_engine.get(request.profile_id))
         findings = _engine.apply(request.profile_id, request.payload_content)
         response = LintResponse(
             profile_id=request.profile_id,
@@ -162,18 +202,40 @@ def validate_profile_definition(
 
 
 def main(argv: list[str] | None = None) -> None:
-    """Run the MCP server over stdio."""
+    """Run the MCP server over stdio (default) or streamable HTTP.
+
+    ``--transport=http`` serves the authenticated streamable-HTTP transport
+    (OAuth 2.1 resource server, or a static dev-mode bearer token); see
+    :mod:`iso20022_bank_profile_mcp.http.transport`.
+    """
     parser = argparse.ArgumentParser(
         prog="iso20022-bank-profile-mcp",
-        description="ISO 20022 bank clearing-profile MCP server (stdio).",
+        description="ISO 20022 bank clearing-profile MCP server.",
     )
     parser.add_argument(
         "--version",
         action="version",
         version=f"iso20022-bank-profile-mcp {__version__}",
     )
-    parser.parse_args(argv)
-    server.run()
+    parser.add_argument(
+        "--transport",
+        choices=("stdio", "http"),
+        default="stdio",
+        help="Transport to serve (default: stdio).",
+    )
+    parser.add_argument(
+        "--bind",
+        default=None,
+        metavar="HOST:PORT",
+        help="Address for --transport=http (default: 127.0.0.1:8080).",
+    )
+    args = parser.parse_args(argv)
+    if args.transport == "http":
+        from iso20022_bank_profile_mcp.http import transport
+
+        transport.run_http(server, args.bind or transport.DEFAULT_BIND)
+    else:
+        server.run()
 
 
 if __name__ == "__main__":  # pragma: no cover

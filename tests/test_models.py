@@ -107,10 +107,35 @@ def test_clearing_profile_round_trip() -> None:
 
 
 def test_profile_summary_defaults() -> None:
-    """A summary defaults its message list and rule count."""
+    """A summary defaults its message list, rule count, tier, entitlement."""
     summary = ProfileSummary(profile_id="X", market_practice="Demo")
     assert summary.supported_messages == ()
     assert summary.rule_count == 0
+    assert summary.tier == "open"
+    assert summary.entitled is True
+
+
+def test_profile_summary_premium_fields() -> None:
+    """A summary carries an explicit premium tier and entitlement flag."""
+    summary = ProfileSummary(
+        profile_id="ACME_Premium",
+        market_practice="Demo",
+        tier="premium",
+        entitled=False,
+    )
+    assert summary.tier == "premium"
+    assert summary.entitled is False
+
+
+def test_clearing_profile_tier_default_and_literal() -> None:
+    """``ClearingProfile.tier`` defaults to ``open`` and is a literal."""
+    assert ClearingProfile(profile_id="X", market_practice="m").tier == "open"
+    premium = ClearingProfile(
+        profile_id="X", market_practice="m", tier="premium"
+    )
+    assert premium.tier == "premium"
+    with pytest.raises(ValidationError):
+        ClearingProfile(profile_id="X", market_practice="m", tier="gold")
 
 
 def test_lint_response_round_trip() -> None:

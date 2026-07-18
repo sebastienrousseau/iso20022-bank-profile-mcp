@@ -101,5 +101,5 @@ NOT_XML = "definitely not xml <<<"
 
 @pytest.fixture
 def engine() -> ProfileEngine:
-    """The bundled clearing-profile engine (four baseline profiles)."""
+    """The bundled clearing-profile engine (five bundled profiles)."""
     return ProfileEngine.from_bundled()

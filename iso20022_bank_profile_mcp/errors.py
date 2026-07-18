@@ -87,3 +87,9 @@ class InvalidProfileDefinitionError(BankProfileError):
     """A supplied profile / rule-pack definition failed validation."""
 
     code = "BP_INVALID_PROFILE_DEFINITION"
+
+
+class NotEntitledError(BankProfileError):
+    """The caller is not entitled to a premium (licensed) clearing profile."""
+
+    code = "BP_NOT_ENTITLED"

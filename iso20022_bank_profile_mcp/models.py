@@ -52,6 +52,9 @@ class ClearingProfile(BaseModel):
 
     profile_id: str
     market_practice: str
+    #: ``"open"`` baseline profiles are unrestricted; ``"premium"`` profiles
+    #: are licensed and require an entitlement (see the ``entitlement`` module).
+    tier: Literal["open", "premium"] = "open"
     supported_messages: tuple[str, ...] = ()
     custom_rules: tuple[ProfileRule, ...] = ()
 
@@ -63,6 +66,9 @@ class ProfileSummary(BaseModel):
 
     profile_id: str
     market_practice: str
+    tier: str = "open"
+    #: Whether the current caller is entitled to use this profile.
+    entitled: bool = True
     supported_messages: tuple[str, ...] = ()
     rule_count: int = 0
 

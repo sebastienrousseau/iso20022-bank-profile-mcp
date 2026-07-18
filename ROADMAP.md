@@ -37,25 +37,32 @@ server serves, ahead of the November 2026 ISO 20022 milestones.
   SPDX 2.3 + pip-licenses SBOMs on every GitHub release, NIST SP 800-218 SSDF
   practice mapping in `SECURITY.md`.
 
-## Fast-follow — richer rule packs, HTTP transport, entitlement gating
+## Delivered since (v0.0.2, shipped 2026-07-18)
 
-Goal: broaden the profile catalogue and support a shared, multi-tenant
-deployment shape.
+- **Optional streamable-HTTP transport** with OAuth 2.1 resource-server auth:
+  `iso20022-bank-profile-mcp --transport=http --bind=HOST:PORT` alongside the
+  default stdio. OAuth 2.1 (RFC 9728) validates bearer JWTs when the
+  `ISO20022_BANK_PROFILE_OAUTH_*` variables are set (a static dev-mode token is
+  the fallback; starting HTTP with no auth is refused), and an optional
+  `X-MCP-Tenant` header is forwarded into the request context for multi-tenant
+  scoping.
+- **Premium rule-pack entitlement gating**: profiles carry a `tier`
+  (`open` / `premium`), `list_profiles` exposes `tier` + a per-caller
+  `entitled` flag, and `get_profile` / `lint_payload` return `BP_NOT_ENTITLED`
+  on a premium profile unless the caller is entitled via an OAuth scope
+  (`profile:premium` / `profile:<id>`) or the
+  `ISO20022_BANK_PROFILE_ENTITLEMENTS` allowlist. A bundled `ACME_Premium`
+  sample pack demonstrates the gate.
+
+## Fast-follow — richer rule packs
+
+Goal: broaden the profile catalogue.
 
 - **Richer bank rule packs**: more scheme profiles (HVPS+, T2, additional
   domestic instant schemes) and a wider rule mini-language (cardinality,
   regex, cross-field assertions) so a profile can capture more of a bank's
-  market practice.
-- **HTTP/SSE transport variant**:
-  `iso20022-bank-profile-mcp --transport=http --bind=…` alongside the default
-  stdio, with an optional tenant header forwarded into the tool-visible
-  `Context` for multi-tenant scoping, and OAuth 2.1 resource-server auth
-  (RFC 9728) on the HTTP transport.
-- **Premium entitlement gating**: gate the higher-tier, bank-specific
-  proprietary clearing profiles / rule packs behind an entitlement claim
-  (matching the profile engine's `register()` seam), so operators can license
-  the scheme packs they need. The `iso20022-readiness-suite-mcp` gateway
-  consumes whatever profiles this server serves.
+  market practice. The `iso20022-readiness-suite-mcp` gateway consumes
+  whatever profiles this server serves.
 
 ## Later
 
@@ -74,7 +81,7 @@ Goal: post-Nov-2026, field-tested behaviour.
 
 - **Embedded LLM**: this server delegates all inference to the client's model
   via MCP; no bundled LLM weights, no hosted inference endpoint.
-- **OAuth provider integration**: the planned HTTP transport authenticates by
+- **OAuth provider integration**: the HTTP transport authenticates by
   validating tokens from your existing authorization server (Okta, Auth0,
   Entra ID, ...); running the authorization server is the operator's job.
 - **Structural XSD validation / message generation**: parsing, generation, and
