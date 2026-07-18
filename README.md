@@ -89,6 +89,7 @@ the suite, so the servers co-install cleanly in a single Python environment.
 | Server | Scope | Install |
 |------|------|------|
 | [`iso20022-readiness-suite-mcp`](https://github.com/sebastienrousseau/iso20022-readiness-suite-mcp) | Orchestration gateway: readiness scoring, remediation, clearing-profile linting, and bank-response simulation over the foundational servers | `pip install iso20022-readiness-suite-mcp` |
+| [`iso20022-evidence-pack-mcp`](https://github.com/sebastienrousseau/iso20022-evidence-pack-mcp) | Compiles readiness findings, remediation diffs and simulated responses into a sealed, Ed25519-signable audit evidence pack | `pip install iso20022-evidence-pack-mcp` |
 | [`structured-address-fix-mcp`](https://github.com/sebastienrousseau/structured-address-fix-mcp) | ISO 20022 postal-address classification, assessment, and remediation for the Nov 2026 structured-address cliff | `pip install structured-address-fix-mcp` |
 | [`iso20022-mcp`](https://github.com/sebastienrousseau/iso20022-mcp) | Unified gateway meta-tools (`search` / `describe` / `validate` / `generate` / `parse`) across the ISO 20022 message catalogue | `pip install iso20022-mcp` |
 | [`camt053-mcp`](https://github.com/sebastienrousseau/camt053-mcp) | ISO 20022 camt.05x bank statements: parse, validate, filter, reverse; MT94x migration; CBPR+ readiness | `pip install camt053-mcp` |
