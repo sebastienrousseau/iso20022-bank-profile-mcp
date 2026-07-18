@@ -1,0 +1,45 @@
+{
+  "$schema": "https://glama.ai/api/mcp/v1/schemas/glama.json",
+  "maintainers": [
+    "sebastienrousseau"
+  ],
+  "title": "iso20022-bank-profile-mcp",
+  "display_name": "ISO 20022 Bank Profile MCP",
+  "description": "Bank clearing-profile Model Context Protocol server for the ISO 20022 MCP Suite: a fully local, closed-world server (no network, no sub-servers) that manages, validates, and serves the bank-specific ISO 20022 clearing profiles / rule packs that sit beyond structural XSD validation. It is a sibling of iso20022-readiness-suite-mcp, which can consume the profiles this server serves. Exposes 4 read-only tools over stdio: list the available clearing profiles as lightweight summaries (list_profiles); return one profile in full including its rule bodies (get_profile); evaluate a raw ISO 20022 payload against a profile and return findings (lint_payload); and validate a bank-supplied profile / rule-pack definition as raw JSON (validate_profile_definition). Bundled baseline profiles cover Generic, CBPR+, SEPA_Instant, and FedNow, with a register() seam for runtime-loaded premium rule packs; XML is parsed with defusedxml only. SLSA Build L3 provenance + PEP 740 sigstore attestations + CycloneDX/SPDX/licenses SBOMs on every release; NIST SP 800-218 SSDF practice IDs mapped in SECURITY.md.",
+  "version": "0.0.1",
+  "repository": "https://github.com/sebastienrousseau/iso20022-bank-profile-mcp",
+  "homepage": "https://sebastienrousseau.github.io/iso20022-bank-profile-mcp/",
+  "license": "Apache-2.0",
+  "language": "Python",
+  "runtime": "python",
+  "categories": [
+    "finance"
+  ],
+  "tags": [
+    "iso20022",
+    "clearing-profiles",
+    "rule-packs",
+    "market-practice",
+    "linting",
+    "cbpr-plus",
+    "sepa-instant",
+    "fednow",
+    "pacs008",
+    "pain001",
+    "nov-2026-cliff",
+    "payment-validation",
+    "fastmcp",
+    "financial-services",
+    "fintech",
+    "slsa",
+    "sigstore"
+  ],
+  "mcpServers": {
+    "iso20022-bank-profile": {
+      "command": "iso20022-bank-profile-mcp"
+    }
+  },
+  "installation": {
+    "pip": "pip install iso20022-bank-profile-mcp"
+  }
+}
