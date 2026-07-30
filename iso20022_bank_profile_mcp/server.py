@@ -51,6 +51,7 @@ from iso20022_bank_profile_mcp.models import (
     ValidateProfileRequest,
     ValidateProfileResponse,
 )
+from iso20022_bank_profile_mcp.tracing import init_tracing, traced_tool
 
 server = FastMCP("iso20022-bank-profile")
 # FastMCP does not accept a version kwarg; set it so serverInfo.version is
@@ -106,6 +107,7 @@ def _require_entitled(profile: ClearingProfile) -> None:
 
 
 @server.tool(title="List clearing profiles", annotations=_PURE_READ)
+@traced_tool("list_profiles")
 def list_profiles() -> list[dict[str, Any]]:
     """List the available clearing profiles as lightweight summaries.
 
@@ -126,6 +128,7 @@ def list_profiles() -> list[dict[str, Any]]:
 
 
 @server.tool(title="Get a clearing profile", annotations=_PURE_READ)
+@traced_tool("get_profile")
 def get_profile(
     profile_id: Annotated[
         str, Field(description="The profile to fetch (see list_profiles).")
@@ -145,6 +148,7 @@ def get_profile(
 
 
 @server.tool(title="Lint a payload against a profile", annotations=_PURE_READ)
+@traced_tool("lint_payload")
 def lint_payload(
     payload_content: Annotated[
         str, Field(description="Raw ISO 20022 payload text (not a path).")
@@ -176,6 +180,7 @@ def lint_payload(
 
 
 @server.tool(title="Validate a profile definition", annotations=_PURE_READ)
+@traced_tool("validate_profile_definition")
 def validate_profile_definition(
     definition_content: Annotated[
         str,
@@ -309,7 +314,19 @@ def main(argv: list[str] | None = None) -> None:
         metavar="HOST:PORT",
         help="Address for --transport=http (default: 127.0.0.1:8080).",
     )
+    parser.add_argument(
+        "--otel-endpoint",
+        default=None,
+        metavar="URL",
+        help=(
+            "Enable OpenTelemetry tracing and export spans to this OTLP/HTTP "
+            "endpoint (requires the optional 'otel' extra). Without a value, "
+            "the OTEL_EXPORTER_OTLP_ENDPOINT environment variable is honoured."
+        ),
+    )
     args = parser.parse_args(argv)
+    if args.otel_endpoint:
+        init_tracing(endpoint=args.otel_endpoint)
     if args.transport == "http":
         from iso20022_bank_profile_mcp.http import transport
 

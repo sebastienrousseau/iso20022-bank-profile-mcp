@@ -167,6 +167,21 @@ def test_main_runs_server(monkeypatch: pytest.MonkeyPatch) -> None:
     assert called == [True]
 
 
+def test_main_otel_endpoint_inits_tracing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """``--otel-endpoint`` initialises tracing with the given endpoint."""
+    endpoints: list[str] = []
+    monkeypatch.setattr(server_mod.server, "run", lambda: None)
+    monkeypatch.setattr(
+        server_mod,
+        "init_tracing",
+        lambda endpoint: endpoints.append(endpoint) or True,
+    )
+    server_mod.main(["--otel-endpoint", "http://localhost:4318/v1/traces"])
+    assert endpoints == ["http://localhost:4318/v1/traces"]
+
+
 def test_main_transport_http(monkeypatch: pytest.MonkeyPatch) -> None:
     """``--transport=http`` hands off to the HTTP transport with the bind."""
     from iso20022_bank_profile_mcp.http import transport as transport_mod
