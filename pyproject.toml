@@ -28,6 +28,14 @@ pyjwt = { version = ">=2.10,<3", extras = ["crypto"] }
 httpx = ">=0.27,<1"
 starlette = ">=1.3.1,<2"
 uvicorn = ">=0.30,<1"
+# Optional OpenTelemetry tracing (iso20022_bank_profile_mcp.tracing): the
+# [otel] extra installs the SDK plus the OTLP/HTTP span exporter. The module
+# imports these lazily, so omitting the extra leaves tracing a graceful no-op.
+opentelemetry-sdk = { version = ">=1.30,<2", optional = true }
+opentelemetry-exporter-otlp-proto-http = { version = ">=1.30,<2", optional = true }
+
+[tool.poetry.extras]
+otel = ["opentelemetry-sdk", "opentelemetry-exporter-otlp-proto-http"]
 
 [tool.poetry.group.dev.dependencies]
 pytest = ">=9.0.3,<10.0.0"
@@ -113,6 +121,10 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = "defusedxml.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "opentelemetry.*"
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
