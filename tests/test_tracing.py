@@ -47,8 +47,8 @@ def _reset_tracing(monkeypatch: pytest.MonkeyPatch) -> None:
 def _install_memory_exporter() -> InMemorySpanExporter:
     """Attach an in-memory exporter to the initialised provider."""
     exporter = InMemorySpanExporter()
-    assert tracing._provider is not None
-    tracing._provider.add_span_processor(SimpleSpanProcessor(exporter))
+    assert tracing.provider() is not None
+    tracing.provider().add_span_processor(SimpleSpanProcessor(exporter))
     return exporter
 
 
@@ -80,9 +80,15 @@ def test_trace_span_records_exception_and_status() -> None:
     assert tracing.init_tracing() is True
     exporter = _install_memory_exporter()
 
-    with pytest.raises(ValueError, match="boom"):
+    # try/except (not pytest.raises) so the post-block assertions are plainly
+    # reachable to static analysis while still proving the exception re-raises.
+    raised: ValueError | None = None
+    try:
         with tracing.trace_span("failing_op"):
             raise ValueError("boom")
+    except ValueError as exc:
+        raised = exc
+    assert raised is not None and str(raised) == "boom"
 
     (span,) = exporter.get_finished_spans()
     assert span.name == "failing_op"
@@ -99,8 +105,12 @@ def test_traced_tool_propagates_and_records_exception() -> None:
     def op() -> None:
         raise RuntimeError("kaboom")
 
-    with pytest.raises(RuntimeError, match="kaboom"):
+    raised: RuntimeError | None = None
+    try:
         op()
+    except RuntimeError as exc:
+        raised = exc
+    assert raised is not None and str(raised) == "kaboom"
 
     (span,) = exporter.get_finished_spans()
     assert span.name == "boom_tool"

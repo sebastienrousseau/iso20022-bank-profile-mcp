@@ -112,6 +112,15 @@ def init_tracing(
     return True
 
 
+def provider() -> Any:
+    """Return the active ``TracerProvider``, or ``None`` before init.
+
+    Exposed so callers/tests can attach span processors without reaching into
+    module state; also gives the module a read of ``_provider``.
+    """
+    return _provider
+
+
 @contextmanager
 def trace_span(name: str) -> Iterator[Any]:
     """Open a span named ``name`` for the duration of the ``with`` block.
@@ -164,8 +173,11 @@ def traced_tool(name: str) -> Callable[[F], F]:
     """
 
     def decorator(func: F) -> F:
+        """Wrap ``func`` so each call runs inside a ``trace_span``."""
+
         @functools.wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
+            """Run ``func`` within a span; pass through when tracing is off."""
             if _tracer is None:
                 return func(*args, **kwargs)
             with trace_span(name):
