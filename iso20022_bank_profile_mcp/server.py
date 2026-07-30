@@ -28,6 +28,7 @@ an MCP client. The transport is stdio (FastMCP's default).
 from __future__ import annotations
 
 import argparse
+import json
 from typing import Annotated, Any
 
 from mcp.server.fastmcp import FastMCP
@@ -199,6 +200,85 @@ def validate_profile_definition(
             is_valid=False, errors=(_as_detail(exc),)
         )
     return response.model_dump(mode="json")
+
+
+# --------------------------------------------------------------------------- #
+# Prompt: the canonical three-step linting workflow.                          #
+# --------------------------------------------------------------------------- #
+@server.prompt(title="Lint a bank payload against a clearing profile")
+def lint_bank_payload(
+    profile_id: Annotated[
+        str, Field(description="The clearing profile to lint against.")
+    ] = "CBPR+",
+) -> str:
+    """Guide an agent through linting a payload against a clearing profile.
+
+    Teaches the canonical three-step workflow: discover the available
+    profiles with ``list_profiles``, inspect the chosen one with
+    ``get_profile``, then evaluate a payload with ``lint_payload``.
+
+    Args:
+        profile_id: The clearing profile the guidance should target.
+    """
+    try:
+        practice = _engine.get(profile_id).market_practice
+    except BankProfileError:
+        practice = (
+            "an unrecognised profile (call list_profiles first to discover "
+            "the valid profile_id values)"
+        )
+    return (
+        f"You are helping lint an ISO 20022 payload against the "
+        f"{profile_id!r} clearing profile ({practice}).\n\n"
+        "Follow this workflow:\n"
+        "1. Call list_profiles to confirm the available profile_id values "
+        "and whether you are entitled to each.\n"
+        f"2. Call get_profile with profile_id={profile_id!r} to read its "
+        "market practice and rule bodies.\n"
+        "3. Call lint_payload with the raw payload text and "
+        f"profile_id={profile_id!r}; each finding names the violated rule, "
+        "its locator, and its severity.\n\n"
+        "Report every finding with its locator and explanation; a payload "
+        "with no findings is compliant."
+    )
+
+
+# --------------------------------------------------------------------------- #
+# Resources: the same lookups exposed as readable context.                    #
+# --------------------------------------------------------------------------- #
+@server.resource(
+    "bankprofile://profiles",
+    title="All clearing profiles",
+    mime_type="application/json",
+)
+def profiles_resource() -> str:
+    """Expose the clearing-profile summaries as a static JSON resource.
+
+    Mirrors the ``list_profiles`` tool for clients that prefer to read
+    context as a resource rather than invoke a tool.
+    """
+    return json.dumps(list_profiles())
+
+
+@server.resource(
+    "bankprofile://profile/{profile_id}",
+    title="A single clearing profile",
+    mime_type="application/json",
+)
+def profile_resource(
+    profile_id: Annotated[
+        str, Field(description="The profile to fetch (see list_profiles).")
+    ],
+) -> str:
+    """Expose one clearing profile as a templated JSON resource.
+
+    Mirrors the ``get_profile`` tool; an unknown id serialises the same
+    ``{"error": ...}`` payload the tool returns rather than raising.
+
+    Args:
+        profile_id: The clearing profile identifier.
+    """
+    return json.dumps(get_profile(profile_id))
 
 
 def main(argv: list[str] | None = None) -> None:
