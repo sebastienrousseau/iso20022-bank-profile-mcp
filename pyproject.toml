@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "iso20022-bank-profile-mcp"
-version = "0.0.2"
+version = "0.0.3"
 description = "MCP server that manages, validates, and serves bank-specific ISO 20022 clearing profiles and rule packs."
 authors = ["Sebastien Rousseau <sebastian.rousseau@gmail.com>"]
 license = "Apache-2.0"
@@ -18,7 +18,7 @@ iso20022-bank-profile-mcp = "iso20022_bank_profile_mcp.server:main"
 
 [tool.poetry.dependencies]
 python = ">=3.10,<4.0"
-mcp = ">=1.28.1,<2"
+mcp = ">=1.28.1,<3"
 pydantic = ">=2.9,<3"
 defusedxml = ">=0.7,<0.8"
 # Optional streamable-HTTP transport (iso20022_bank_profile_mcp.http):
@@ -114,6 +114,14 @@ warn_redundant_casts = true
 warn_unused_ignores = true
 plugins = ["pydantic.mypy"]
 exclude = [".venv/", ".eggs/"]
+
+# The MCP server object is built by a shim that returns either
+# mcp 2.x's MCPServer or mcp 1.x's FastMCP, so it is typed Any and the
+# @server.tool()/@server.resource() decorators read as untyped. The
+# decorated functions themselves are fully annotated.
+[[tool.mypy.overrides]]
+module = "iso20022_bank_profile_mcp.server"
+disallow_untyped_decorators = false
 
 [[tool.mypy.overrides]]
 module = "mcp.*"
