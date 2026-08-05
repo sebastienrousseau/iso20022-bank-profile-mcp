@@ -35,6 +35,7 @@ from mcp.types import ToolAnnotations
 from pydantic import Field
 
 from iso20022_bank_profile_mcp import __version__, entitlement
+from iso20022_bank_profile_mcp._mcp_compat import build_server
 from iso20022_bank_profile_mcp.engine import ProfileEngine
 from iso20022_bank_profile_mcp.errors import (
     BankProfileError,
@@ -52,34 +53,7 @@ from iso20022_bank_profile_mcp.models import (
 )
 from iso20022_bank_profile_mcp.tracing import init_tracing, traced_tool
 
-
-def _build_server(name: str, version: str) -> Any:
-    """Construct the MCP server across both SDK majors.
-
-    ``mcp`` 2.0 renamed ``FastMCP`` to ``MCPServer`` and dropped the
-    ``mcp.server.fastmcp`` module. The constructor, the ``.tool()``
-    decorator and ``.run()`` are otherwise identical, so one shim covers
-    both. 2.x also takes ``version`` as a constructor kwarg and exposes
-    ``.version`` read-only; 1.x has neither, so the version has to be
-    poked onto the underlying low-level server.
-    """
-    import mcp.server as _mcp_server_mod
-
-    server_cls = getattr(_mcp_server_mod, "MCPServer", None)
-    if server_cls is not None:  # mcp >= 2
-        return server_cls(name, version=version)
-
-    # mcp 1.x. Not exercised by the suite because the pinned
-    # requirements resolve mcp 2.x; kept so the declared
-    # ``mcp>=1.28.1,<3`` range is honest.
-    from mcp.server.fastmcp import FastMCP  # pragma: no cover
-
-    built = FastMCP(name)  # pragma: no cover
-    built._mcp_server.version = version  # pragma: no cover
-    return built  # pragma: no cover
-
-
-server = _build_server("iso20022-bank-profile", __version__)
+server = build_server("iso20022-bank-profile", __version__)
 
 # Module singleton. Tests substitute ``_engine`` with a fixture-loaded engine.
 _engine: ProfileEngine = ProfileEngine.from_bundled()
