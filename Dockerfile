@@ -11,7 +11,7 @@
 # clearing-profile data, so no additional servers need to be present at
 # runtime. (Sub-servers are not applicable to this image.)
 
-FROM python:3.14-slim@sha256:cea0e6040540fb2b965b6e7fb5ffa00871e632eef63719f0ea54bca189ce14a6 AS builder
+FROM python:3.14-slim@sha256:a7fb1e634c4a578f9e0bd6327f11a3cde11b7a9395f48e24360c0988bcc5c2bc AS builder
 
 WORKDIR /build
 
@@ -30,7 +30,7 @@ RUN python -m venv /opt/venv \
     && /opt/venv/bin/pip install .
 
 
-FROM python:3.14-slim@sha256:cea0e6040540fb2b965b6e7fb5ffa00871e632eef63719f0ea54bca189ce14a6
+FROM python:3.14-slim@sha256:a7fb1e634c4a578f9e0bd6327f11a3cde11b7a9395f48e24360c0988bcc5c2bc
 
 LABEL org.opencontainers.image.title="iso20022-bank-profile-mcp" \
       org.opencontainers.image.description="Local MCP server that manages, validates, and serves bank-specific ISO 20022 clearing profiles and rule packs." \
