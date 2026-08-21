@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.3] - 2026-08-21
+
+### Added
+
+- **MCP prompts and resources** for parity across the MCP trinity, so
+  this server exposes the same surface shape as its siblings.
+- **Optional OpenTelemetry tracing** behind the `[otel]` extra.
+
+### Fixed
+
+- **`cryptography` 50.0.0**, the release that patches the outstanding
+  advisory. The previous ceiling made it unresolvable.
+- **`mcp` capped below 2.0**, restoring the FastMCP API the server is
+  written against.
+
+### Changed
+
+- **Adopted the shared MCP compatibility layer.**
+- **A `lockfile` CI job.** `release.yml` installs with poetry and CI did
+  not, so a stale `poetry.lock` was undetectable until a release — with
+  the tag already public. The same gap turned a sibling package's
+  release red at its first step.
+- Dependency and GitHub Actions updates consolidated across several
+  Dependabot batches.
+
 ## [0.0.2] - 2026-07-18
 
 Adds an **optional streamable-HTTP transport** with OAuth 2.1 resource-server
