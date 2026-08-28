@@ -5,6 +5,48 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.4] - 2026-08-28
+
+Brings this repository onto the **suite conformance gate**.
+
+### Added
+
+- **`benches/bench_lint_payload.py`** — what linting costs, and how it
+  grows. An agent working a folder calls `lint_payload` once per file, and
+  a corporate batch is hundreds of `<PmtInf>` blocks, not one.
+
+  Two things it already confirms:
+
+  **Linting is linear.** `us/block` moves **1.04x** between 10 and 5,000
+  blocks, so the linter makes one pass over the tree rather than
+  re-walking it per rule. Fixtures are all small and would never have
+  shown the difference.
+
+  **The entitlement gate refuses before doing the work.** A gated profile
+  is refused in **0.006 ms** against **0.33 ms** for the cheapest
+  permitted one. That is the right way round: a gate that lints first and
+  discards the answer wastes the work *and* leaks timing about rules the
+  caller is not entitled to see. It was never measured before.
+
+  Nothing asserts a timing threshold — wall-clock is not comparable
+  between machines, and a flaky performance gate teaches people to ignore
+  red. CI runs `--quick`, so a benchmark that stops compiling fails the
+  build rather than rotting.
+
+- **`tests/test_suite_conformance.py`** — invariants shared by every
+  repository in the suite, vendored from one canonical copy and
+  checksummed by its own test. Editing the local copy fails by design.
+
+### Changed
+
+- CI lints, formats and runs `benches/` alongside everything else.
+- `tomli` (on 3.10) and `packaging` are declared dev dependencies rather
+  than relied on transitively via pytest. The conformance gate parses
+  `pyproject.toml`, and a gate that silently stops running is worse than
+  no gate.
+- `tests/test_suite_conformance.py` is excluded from black: it is
+  generated, and the suite uses three different line lengths.
+
 ## [0.0.3] - 2026-08-21
 
 ### Added
