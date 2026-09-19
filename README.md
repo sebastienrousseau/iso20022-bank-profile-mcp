@@ -23,9 +23,10 @@ whose readiness gateway can consume the profiles this server serves.
 > tomorrow. `iso20022-bank-profile-mcp` turns those scheme rules into
 > versioned, agent-callable clearing profiles: `list_profiles` and
 > `get_profile` serve them, `lint_payload` evaluates a payload against one,
-> and `validate_profile_definition` vets a bank-supplied rule pack. **v0.0.2**,
-> stdio by default (plus an optional OAuth 2.1 HTTP transport), 4 read-only
-> tools, premium rule-pack entitlement gating, Python 3.10+.
+> and `validate_profile_definition` vets a bank-supplied rule pack. **v0.0.5**,
+> 4 read-only tools over stdio (the default), streamable HTTP, SSE or
+> authenticated OAuth 2.1 HTTP, premium rule-pack entitlement gating,
+> Python 3.10+.
 
 ## Contents
 
@@ -33,6 +34,7 @@ whose readiness gateway can consume the profiles this server serves.
 - [The ISO 20022 MCP Suite](#the-iso-20022-mcp-suite)
 - [Install](#install)
 - [Quick Start](#quick-start)
+- [Transports](#transports) — stdio, streamable HTTP (2026-07-28 and 2025-11-25), SSE and authenticated HTTP from one command line
 - [Tools](#tools)
 - [HTTP transport & authentication](#http-transport--authentication)
 - [How it fits the suite](#how-it-fits-the-suite)
@@ -72,7 +74,7 @@ with `defusedxml` only (no XXE / billion-laughs).
 
 ```mermaid
 flowchart TD
-    A["MCP client<br/>(Claude Desktop, IDE, agent)"] -->|stdio| B["iso20022-bank-profile-mcp<br/>(clearing-profile server)"]
+    A["MCP client<br/>(Claude Desktop, IDE, agent)"] -->|stdio, streamable HTTP, SSE| B["iso20022-bank-profile-mcp<br/>(clearing-profile server)"]
     B --> C["ProfileEngine<br/>(bundled JSON + register() seam)"]
     C --> D["Generic"]
     C --> E["CBPR+"]
@@ -136,7 +138,7 @@ python -m pip install -U iso20022-bank-profile-mcp
 For the 10-minute install → MCP client config → first conversation tutorial,
 see [`docs/quickstart.md`](docs/quickstart.md).
 
-Launch the server over stdio (the FastMCP default transport):
+Launch the server over stdio (the default transport):
 
 ```sh
 iso20022-bank-profile-mcp
@@ -191,6 +193,34 @@ async def main() -> None:
 asyncio.run(main())
 ```
 
+## Transports
+
+One command line, four transports:
+
+| Command | Transport | Endpoint | Protocol revisions |
+| :--- | :--- | :--- | :--- |
+| `iso20022-bank-profile-mcp` | stdio | the client spawns the process | 2026-07-28, 2025-11-25 |
+| `iso20022-bank-profile-mcp --transport streamable-http` | Streamable HTTP | `http://127.0.0.1:8000/mcp` | 2026-07-28 (stateless, `server/discover`) and 2025-11-25 (`initialize`, `Mcp-Session-Id`) on the same endpoint; responses stream as server-sent events, `GET` opens the server-to-client stream |
+| `iso20022-bank-profile-mcp --transport sse` | HTTP+SSE (2024-11-05) | `http://127.0.0.1:8000/sse` and `/messages/` | for clients that still expect the older transport |
+| `iso20022-bank-profile-mcp --transport http` | Authenticated streamable HTTP (see [`http/transport.py`](iso20022_bank_profile_mcp/http/transport.py)) | `http://127.0.0.1:8080/mcp` (`--bind`) | OAuth 2.1 resource server or a static dev-mode token, `X-MCP-Tenant` scoping, scope-based premium entitlement |
+
+`--host` and `--port` change the bind address of `streamable-http` and
+`sse` (defaults `127.0.0.1` and `8000`). Those two carry no
+authentication of their own: bind loopback, or put the server behind a
+gateway you trust before binding a routable address; `--transport http`
+is the authenticated option. Every release is verified over streamable
+HTTP with [scout](https://github.com/sebastienrousseau/scout) in both
+protocol eras and over SSE with the MCP SDK client; see
+[ADR 0001](docs/adr/0001-three-transports-one-command-line.md).
+
+```json
+{
+  "mcpServers": {
+    "iso20022-bank-profile": { "url": "http://127.0.0.1:8000/mcp" }
+  }
+}
+```
+
 ## Tools
 
 All tools return JSON-serialisable data; on a domain, validation, or value
@@ -206,8 +236,10 @@ sub-servers.
 ## HTTP transport & authentication
 
 stdio is the default and needs no authentication — one process per operator,
-launched by the client, no network surface. For **shared, multi-tenant
-deployments** the server also speaks an optional streamable-HTTP transport:
+launched by the client, no network surface. The suite's `streamable-http`
+and `sse` transports above are unauthenticated too. For **shared,
+multi-tenant deployments** the server also speaks an authenticated
+streamable-HTTP transport:
 
 ```sh
 iso20022-bank-profile-mcp --transport=http --bind=127.0.0.1:8080
@@ -322,11 +354,15 @@ See [`docs/profiles.md`](docs/profiles.md) for the full entitlement model.
   of `iso20022-readiness-suite-mcp`, which consumes these profiles. Use it if
   you want scoring, remediation, and bank-response simulation composed
   together.
-- **You need a long-lived network service without auth.** stdio is the default
-  (one process per operator, no network surface); the optional
-  [HTTP transport](#http-transport--authentication) exists for shared,
-  multi-tenant deployments but always requires authentication (OAuth 2.1 or a
-  static dev-mode token) — it will not serve an unauthenticated endpoint.
+- **You need a long-lived network service on a routable address without
+  auth.** stdio is the default (one process per operator, no network
+  surface); `--transport streamable-http` and `--transport sse` bind loopback
+  and carry no authentication, so a routable deployment belongs behind a
+  gateway you trust; the
+  [`--transport http`](#http-transport--authentication) option exists for
+  shared, multi-tenant deployments and always requires authentication (OAuth
+  2.1 or a static dev-mode token) — it will not serve an unauthenticated
+  endpoint.
 - **You need streaming responses.** Tool calls return whole values, not
   streams.
 

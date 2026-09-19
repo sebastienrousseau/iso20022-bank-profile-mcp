@@ -22,7 +22,11 @@ serializable data and an ``{"error": ...}``-shaped payload on any failure,
 never a traceback.
 
 Launch as a console script (``iso20022-bank-profile-mcp``) or configure it in
-an MCP client. The transport is stdio (FastMCP's default).
+an MCP client. stdio is the default transport; ``--transport
+streamable-http`` and ``--transport sse`` listen on ``--host``/``--port``
+(see :mod:`iso20022_bank_profile_mcp._transports`) and ``--transport http``
+serves authenticated streamable HTTP (see
+:mod:`iso20022_bank_profile_mcp.http.transport`).
 """
 
 from __future__ import annotations
@@ -34,7 +38,12 @@ from typing import Annotated, Any
 from mcp.types import ToolAnnotations
 from pydantic import Field
 
-from iso20022_bank_profile_mcp import __version__, entitlement
+from iso20022_bank_profile_mcp import (
+    __version__,
+    _cli,
+    _transports,
+    entitlement,
+)
 from iso20022_bank_profile_mcp._mcp_compat import build_server
 from iso20022_bank_profile_mcp.engine import ProfileEngine
 from iso20022_bank_profile_mcp.errors import (
@@ -284,26 +293,51 @@ def profile_resource(
 
 
 def main(argv: list[str] | None = None) -> None:
-    """Run the MCP server over stdio (default) or streamable HTTP.
+    """Run the MCP server over stdio (default), streamable HTTP or SSE.
 
     ``--transport=http`` serves the authenticated streamable-HTTP transport
     (OAuth 2.1 resource server, or a static dev-mode bearer token); see
-    :mod:`iso20022_bank_profile_mcp.http.transport`.
+    :mod:`iso20022_bank_profile_mcp.http.transport`. ``--transport
+    streamable-http`` or ``--transport sse`` listens on ``--host``/``--port``
+    instead, without authentication; see
+    :mod:`iso20022_bank_profile_mcp._cli` and
+    :mod:`iso20022_bank_profile_mcp._transports`.
     """
     parser = argparse.ArgumentParser(
         prog="iso20022-bank-profile-mcp",
-        description="ISO 20022 bank clearing-profile MCP server.",
+        description=(
+            f"iso20022-bank-profile-mcp {__version__}: an MCP server. "
+            "Speaks stdio by default; --transport=http serves "
+            "authenticated streamable HTTP for shared multi-tenant "
+            "deployments (OAuth 2.1 via the ISO20022_BANK_PROFILE_OAUTH_* "
+            "environment variables, or the static dev-mode "
+            "ISO20022_BANK_PROFILE_TOKEN token); "
+            "--transport=streamable-http and --transport=sse serve the "
+            "suite's unauthenticated HTTP transports on --host/--port."
+        ),
+        # ``_cli.add_arguments`` defines ``--transport`` with the
+        # suite's three choices; the definition below replaces it with
+        # the four this server speaks while keeping ``--host``/``--port``.
+        conflict_handler="resolve",
     )
     parser.add_argument(
         "--version",
         action="version",
         version=f"iso20022-bank-profile-mcp {__version__}",
     )
+    _cli.add_arguments(parser)
     parser.add_argument(
         "--transport",
-        choices=("stdio", "http"),
+        choices=("stdio", "http", *_transports.TRANSPORTS[1:]),
         default="stdio",
-        help="Transport to serve (default: stdio).",
+        help=(
+            "MCP transport to serve: 'stdio' (default; launched by a "
+            "local MCP client), 'http' (authenticated streamable HTTP, "
+            "see transport.py: mandatory bearer-token auth on --bind), "
+            "'streamable-http' (HTTP at --host:--port/mcp, protocol "
+            "2026-07-28 and 2025-11-25, no auth) or 'sse' (the older "
+            "HTTP+SSE transport at /sse and /messages/, no auth)."
+        ),
     )
     parser.add_argument(
         "--bind",
@@ -318,7 +352,8 @@ def main(argv: list[str] | None = None) -> None:
         help=(
             "Enable OpenTelemetry tracing and export spans to this OTLP/HTTP "
             "endpoint (requires the optional 'otel' extra). Without a value, "
-            "the OTEL_EXPORTER_OTLP_ENDPOINT environment variable is honoured."
+            "the OTEL_EXPORTER_OTLP_ENDPOINT environment variable is honoured. "
+            "Applies to every transport."
         ),
     )
     args = parser.parse_args(argv)
@@ -328,8 +363,8 @@ def main(argv: list[str] | None = None) -> None:
         from iso20022_bank_profile_mcp.http import transport
 
         transport.run_http(server, args.bind or transport.DEFAULT_BIND)
-    else:
-        server.run()
+        return
+    _transports.run(server, args.transport, args.host, args.port)
 
 
 if __name__ == "__main__":  # pragma: no cover
