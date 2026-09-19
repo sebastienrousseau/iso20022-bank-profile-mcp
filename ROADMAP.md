@@ -37,7 +37,7 @@ server serves, ahead of the November 2026 ISO 20022 milestones.
   SPDX 2.3 + pip-licenses SBOMs on every GitHub release, NIST SP 800-218 SSDF
   practice mapping in `SECURITY.md`.
 
-## Delivered since (v0.0.2, shipped 2026-07-18)
+## Delivered since (v0.0.2 to v0.0.5, shipped 2026-07-18 to 2026-08-29)
 
 - **Optional streamable-HTTP transport** with OAuth 2.1 resource-server auth:
   `iso20022-bank-profile-mcp --transport=http --bind=HOST:PORT` alongside the
@@ -53,6 +53,23 @@ server serves, ahead of the November 2026 ISO 20022 milestones.
   (`profile:premium` / `profile:<id>`) or the
   `ISO20022_BANK_PROFILE_ENTITLEMENTS` allowlist. A bundled `ACME_Premium`
   sample pack demonstrates the gate.
+- **Prompts and resources** (`lint_bank_payload`, `bankprofile://profiles`,
+  `bankprofile://profile/{profile_id}`) for surface parity with the
+  siblings, and **opt-in OpenTelemetry tracing** behind the `[otel]` extra
+  (v0.0.3).
+- **The lint benchmark and the suite conformance gate** (v0.0.4); the
+  scheduled **release-consistency check** against PyPI and the version
+  gate across `pyproject.toml`, `__init__.py`, `glama.json` and
+  `server.json` (v0.0.5).
+
+## Next (unreleased on `main`)
+
+- **The suite's shared command line**: `--transport streamable-http` and
+  `--transport sse` on `--host`/`--port`, unauthenticated and bound to
+  loopback by default, alongside stdio and the authenticated
+  `--transport http` (ADR 0001).
+- **Governance parity**: `ARCHITECTURE.md`, `RELEASING.md`,
+  `CITATION.cff`, a Developer Certificate of Origin check and `docs/adr/`.
 
 ## Fast-follow — richer rule packs
 
