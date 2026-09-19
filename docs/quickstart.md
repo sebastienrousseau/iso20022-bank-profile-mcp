@@ -27,7 +27,7 @@ install.
 ## 2. Launch the server
 
 The package installs an `iso20022-bank-profile-mcp` console entry
-point that starts the server over stdio (FastMCP's default transport):
+point that starts the server over stdio (the default transport):
 
 ```sh
 iso20022-bank-profile-mcp

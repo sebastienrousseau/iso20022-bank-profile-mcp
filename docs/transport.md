@@ -5,9 +5,12 @@ operator, launched by the MCP client, with no network surface and no
 authentication. That is the right shape for a local, single-operator
 deployment and needs nothing from this page.
 
-For **shared, multi-tenant deployments**, the server also offers an optional
-streamable-HTTP transport. This page covers how to run it and how to
-authenticate it.
+`--transport streamable-http` and `--transport sse` (on `--host`/`--port`,
+default `127.0.0.1:8000`) are the suite's shared, unauthenticated HTTP
+transports for a gateway or auditor on the same host; see the README's
+Transports section and ADR 0001. For **shared, multi-tenant deployments**,
+the server also offers an authenticated streamable-HTTP transport. This page
+covers how to run it and how to authenticate it.
 
 ## Running the HTTP transport
 
@@ -15,7 +18,8 @@ authenticate it.
 iso20022-bank-profile-mcp --transport=http --bind=127.0.0.1:8080
 ```
 
-- `--transport` is `stdio` (default) or `http`.
+- `--transport` is `stdio` (default), `http`, `streamable-http` or `sse`;
+  only `http` is authenticated.
 - `--bind` takes a `HOST:PORT` string and defaults to `127.0.0.1:8080`
   (loopback-only). Exposing the server beyond the host is an explicit opt-in —
   bind to `0.0.0.0:8080` (or a specific interface) only once auth is in place.

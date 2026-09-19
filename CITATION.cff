@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+cff-version: 1.2.0
+message: "If you use iso20022-bank-profile-mcp in research or production write-ups, please cite it as below."
+type: software
+title: "iso20022-bank-profile-mcp: Model Context Protocol server for bank-specific ISO 20022 clearing profiles"
+abstract: >-
+  A fully local, closed-world Model Context Protocol server that manages,
+  validates and serves bank-specific ISO 20022 clearing profiles and rule
+  packs, the market-practice rules beyond structural XSD validation: four
+  read-only tools to list and fetch profiles (CBPR+, SEPA Instant, FedNow,
+  Generic), lint a payload against one and validate a bank-supplied rule
+  pack, with premium rule-pack entitlement gating.
+authors:
+  - family-names: Rousseau
+    given-names: Sebastien
+    email: sebastian.rousseau@gmail.com
+version: "0.0.5"
+date-released: "2026-08-29"
+license: "Apache-2.0 OR MIT"
+repository-code: "https://github.com/sebastienrousseau/iso20022-bank-profile-mcp"
+url: "https://sebastienrousseau.github.io/iso20022-bank-profile-mcp/"
+keywords:
+  - ISO 20022
+  - clearing profiles
+  - CBPR+
+  - SEPA
+  - market practice
+  - Model Context Protocol
+  - MCP
+  - AI agents

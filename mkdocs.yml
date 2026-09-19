@@ -36,6 +36,9 @@ nav:
   - Quickstart: quickstart.md
   - Clearing profiles: profiles.md
   - HTTP transport: transport.md
+  - Decisions:
+      - Index: adr/index.md
+      - 0001 Three transports, one command line: adr/0001-three-transports-one-command-line.md
 
 markdown_extensions:
   - admonition
