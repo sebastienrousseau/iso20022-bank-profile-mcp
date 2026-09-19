@@ -7,6 +7,7 @@
 [![Quality][quality-badge]][quality-url]
 [![OpenSSF Scorecard][scorecard-badge]][scorecard-url]
 [![Documentation][docs-badge]][docs-url]
+[![Glama MCP server score][glama-badge]][glama-url]
 
 **A fully local, closed-world [Model Context Protocol][mcp] server that
 manages, validates, and serves bank-specific ISO 20022 clearing profiles /
@@ -419,3 +420,5 @@ Built alongside the foundational servers of the ISO 20022 MCP Suite and the
 [scorecard-url]: https://scorecard.dev/viewer/?uri=github.com/sebastienrousseau/iso20022-bank-profile-mcp
 [tests-badge]: https://img.shields.io/github/actions/workflow/status/sebastienrousseau/iso20022-bank-profile-mcp/ci.yml?branch=main&label=Tests&style=for-the-badge
 [tests-url]: https://github.com/sebastienrousseau/iso20022-bank-profile-mcp/actions/workflows/ci.yml
+[glama-badge]: https://glama.ai/mcp/servers/sebastienrousseau/iso20022-bank-profile-mcp/badges/score.svg
+[glama-url]: https://glama.ai/mcp/servers/sebastienrousseau/iso20022-bank-profile-mcp
