@@ -23,7 +23,7 @@ whose readiness gateway can consume the profiles this server serves.
 > tomorrow. `iso20022-bank-profile-mcp` turns those scheme rules into
 > versioned, agent-callable clearing profiles: `list_profiles` and
 > `get_profile` serve them, `lint_payload` evaluates a payload against one,
-> and `validate_profile_definition` vets a bank-supplied rule pack. **v0.0.5**,
+> and `validate_profile_definition` vets a bank-supplied rule pack. **v0.0.6**,
 > 4 read-only tools over stdio (the default), streamable HTTP, SSE or
 > authenticated OAuth 2.1 HTTP, premium rule-pack entitlement gating,
 > Python 3.10+.

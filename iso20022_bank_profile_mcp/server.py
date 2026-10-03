@@ -117,7 +117,24 @@ def _require_entitled(profile: ClearingProfile) -> None:
 def list_profiles() -> list[dict[str, Any]]:
     """List the available clearing profiles as lightweight summaries.
 
-    Use this to discover the ``profile_id`` values the other tools accept.
+    Purpose:
+        Discover and enumerate all built-in and registered ISO 20022 clearing
+        profiles, including supported messages and rule counts.
+
+    When to use:
+        Call this tool first to discover valid `profile_id` values before
+        fetching full profile rules with `get_profile` or linting payloads
+        with `lint_payload`.
+
+    When NOT to use:
+        Do not use if you need full rule bodies and validation expressions;
+        use `get_profile` instead.
+
+    Behavioral transparency:
+        - Deterministic: Returns identical summaries for registered profiles.
+        - External dependencies: None (reads internal registry).
+        - Side effects: Pure read-only operation; modifies no state.
+        - Error states: Always succeeds and returns a list.
     """
     summaries = [
         ProfileSummary(
@@ -142,6 +159,26 @@ def get_profile(
 ) -> dict[str, Any]:
     """Return one clearing profile in full, including its rule bodies.
 
+    Purpose:
+        Retrieve the complete definition of an ISO 20022 clearing profile,
+        including rule bodies, validation logic, and metadata.
+
+    When to use:
+        Use when inspecting the specific market-practice rules, XPath
+        targets, or error severity configured for a specific clearing network.
+
+    When NOT to use:
+        Do not use to discover available profile identifiers; use `list_profiles`
+        first. Do not use to evaluate payloads; use `lint_payload`.
+
+    Behavioral transparency:
+        - Deterministic: Given the same profile_id and entitlements, returns
+          identical profile data.
+        - External dependencies: None (local memory/registry).
+        - Side effects: Pure read-only operation; modifies no state.
+        - Error states: Returns an error object if profile_id is unknown
+          or requires ungranted entitlements.
+
     Args:
         profile_id: The clearing profile identifier.
     """
@@ -164,6 +201,27 @@ def lint_payload(
     ],
 ) -> dict[str, Any]:
     """Evaluate a payload against a clearing profile and return findings.
+
+    Purpose:
+        Validate an ISO 20022 XML or JSON message payload against the
+        market-practice rules and constraints of a specific bank clearing profile.
+
+    When to use:
+        Use before submitting payment messages to clearing rails (CBPR+, SEPA,
+        FedNow) to identify rule violations, missing elements, or format defects.
+
+    When NOT to use:
+        Do not use for basic XSD schema validation; use structural XML
+        validators. Do not use to validate rule pack schemas; use
+        `validate_profile_definition`.
+
+    Behavioral transparency:
+        - Deterministic: Identical payload and profile_id produce identical
+          findings.
+        - External dependencies: None (defusedxml parser only).
+        - Side effects: Pure read-only operation; writes no data.
+        - Error states: Returns an error object on XML syntax error,
+          unknown profile_id, or entitlement failure.
 
     Args:
         payload_content: The raw ISO 20022 message text.
@@ -194,6 +252,25 @@ def validate_profile_definition(
     ],
 ) -> dict[str, Any]:
     """Validate a bank-supplied profile / rule-pack definition (raw JSON).
+
+    Purpose:
+        Verify that a candidate clearing profile or rule-pack JSON text meets
+        all schema, syntactic, and semantic requirements.
+
+    When to use:
+        Use before registering new custom bank profiles or importing external
+        rule packs into the engine.
+
+    When NOT to use:
+        Do not use to validate payment messages; use `lint_payload` instead.
+
+    Behavioral transparency:
+        - Deterministic: Evaluates strictly according to the Pydantic profile
+          schema.
+        - External dependencies: None (standard JSON parsing).
+        - Side effects: Pure read-only validation; does not register the profile.
+        - Error states: Returns `is_valid: False` with descriptive error details
+          if validation fails.
 
     Args:
         definition_content: The candidate profile definition, as JSON text.
