@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "iso20022-bank-profile-mcp"
-version = "0.0.5"
+version = "0.0.6"
 description = "MCP server that manages, validates, and serves bank-specific ISO 20022 clearing profiles and rule packs."
 authors = ["Sebastien Rousseau <sebastian.rousseau@gmail.com>"]
 license = "Apache-2.0 OR MIT"
@@ -145,6 +145,16 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = "opentelemetry.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+# Agent frameworks are optional extras, lazily imported by adapters.py and not
+# present when type-checking the server in isolation.
+module = [
+    "langchain_core.*",
+    "crewai.*",
+    "llama_index.*",
+]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]

@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: Apache-2.0 OR MIT -->
+
 # iso20022-bank-profile-mcp: The ISO 20022 Bank Clearing-Profile Server
 
 [![PyPI Version][pypi-badge]][07]
@@ -8,6 +10,11 @@
 [![OpenSSF Scorecard][scorecard-badge]][scorecard-url]
 [![Documentation][docs-badge]][docs-url]
 [![Glama MCP server score][glama-badge]][glama-url]
+
+<p align="center">
+  <img src=".github/demo.gif" alt="iso20022-bank-profile-mcp Demo" width="100%" />
+</p>
+
 
 **A fully local, closed-world [Model Context Protocol][mcp] server that
 manages, validates, and serves bank-specific ISO 20022 clearing profiles /
@@ -23,7 +30,7 @@ whose readiness gateway can consume the profiles this server serves.
 > tomorrow. `iso20022-bank-profile-mcp` turns those scheme rules into
 > versioned, agent-callable clearing profiles: `list_profiles` and
 > `get_profile` serve them, `lint_payload` evaluates a payload against one,
-> and `validate_profile_definition` vets a bank-supplied rule pack. **v0.0.5**,
+> and `validate_profile_definition` vets a bank-supplied rule pack. **v0.0.6**,
 > 4 read-only tools over stdio (the default), streamable HTTP, SSE or
 > authenticated OAuth 2.1 HTTP, premium rule-pack entitlement gating,
 > Python 3.10+.
