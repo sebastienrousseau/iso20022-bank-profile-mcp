@@ -50,7 +50,7 @@ from iso20022_bank_profile_mcp.http.context import (
 )
 
 if TYPE_CHECKING:  # pragma: no cover
-    from mcp.server.fastmcp import FastMCP
+    from iso20022_bank_profile_mcp._mcp_compat import MCPServer
 
 __all__ = [
     "DEFAULT_BIND",
@@ -144,7 +144,7 @@ class BearerTokenMiddleware:
 
 
 def build_http_app(
-    mcp_server: FastMCP,
+    mcp_server: MCPServer,
     token: str | None = None,
     oauth_config: _oauth.OAuthConfig | None = None,
 ) -> ASGIApp:
@@ -169,7 +169,9 @@ def build_http_app(
     )
 
 
-def run_http(mcp_server: FastMCP, bind: str, token: str | None = None) -> None:
+def run_http(
+    mcp_server: MCPServer, bind: str, token: str | None = None
+) -> None:
     """Serve the MCP server over authenticated streamable HTTP.
 
     Blocks until the process is stopped. Auth is resolved from the
