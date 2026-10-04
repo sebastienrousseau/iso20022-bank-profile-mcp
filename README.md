@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: Apache-2.0 OR MIT -->
+
 # iso20022-bank-profile-mcp: The ISO 20022 Bank Clearing-Profile Server
 
 [![PyPI Version][pypi-badge]][07]
