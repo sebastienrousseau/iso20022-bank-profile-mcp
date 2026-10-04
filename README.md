@@ -9,6 +9,11 @@
 [![Documentation][docs-badge]][docs-url]
 [![Glama MCP server score][glama-badge]][glama-url]
 
+<p align="center">
+  <img src=".github/demo.gif" alt="iso20022-bank-profile-mcp Demo" width="100%" />
+</p>
+
+
 **A fully local, closed-world [Model Context Protocol][mcp] server that
 manages, validates, and serves bank-specific ISO 20022 clearing profiles /
 rule packs** — the market-practice rules that sit *beyond* structural XSD
