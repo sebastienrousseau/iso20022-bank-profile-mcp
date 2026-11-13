@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Reworded cross-tool imperatives in MCP tool descriptions (`list_profiles`,
+  `get_profile`, `lint_payload`, and `validate_profile_definition`) into
+  declarative scope boundaries so each tool governs only itself and clears
+  `passmcp` `catalog.text.shadowing` checks.
+
+### Changed
+
+- CI and release workflows: `github/codeql-action` 4.39.3 and
+  `sigstore/cosign-installer` 4.1.3 (#69).
+- Dependencies and hash-pinned requirement sets: `pydantic` 2.14.3, `ruff`
+  0.17.4 in `requirements/lint.{in,txt}` (0.17.5 in `poetry.lock`),
+  `pytest-asyncio` 1.4.1.post1 in `requirements/test.txt` (1.5.0 in
+  `poetry.lock`), and `cyclonedx-bom` 8.0.1 in `requirements/sbom.txt` while
+  pruning orphaned `cyclonedx-bom` entries from `poetry.lock` (#70, #71, #72).
+
 ### Security
 
 - The release tooling (`requirements/build.txt`) keeps `virtualenv >= 21.14.13`

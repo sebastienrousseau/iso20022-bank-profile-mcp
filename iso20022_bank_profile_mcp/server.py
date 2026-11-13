@@ -127,8 +127,8 @@ def list_profiles() -> list[dict[str, Any]]:
         with `lint_payload`.
 
     When NOT to use:
-        Do not use if you need full rule bodies and validation expressions;
-        use `get_profile` instead.
+        Returns lightweight summaries only; use `get_profile` when full rule
+        bodies and validation expressions are required.
 
     Behavioral transparency:
         - Deterministic: Returns identical summaries for registered profiles.
@@ -168,8 +168,9 @@ def get_profile(
         targets, or error severity configured for a specific clearing network.
 
     When NOT to use:
-        Do not use to discover available profile identifiers; use `list_profiles`
-        first. Do not use to evaluate payloads; use `lint_payload`.
+        Requires a known `profile_id` (`list_profiles` enumerates available
+        profiles) and inspects definitions without evaluating payloads
+        (`lint_payload` evaluates messages).
 
     Behavioral transparency:
         - Deterministic: Given the same profile_id and entitlements, returns
@@ -211,9 +212,9 @@ def lint_payload(
         FedNow) to identify rule violations, missing elements, or format defects.
 
     When NOT to use:
-        Do not use for basic XSD schema validation; use structural XML
-        validators. Do not use to validate rule pack schemas; use
-        `validate_profile_definition`.
+        Evaluates market-practice clearing rules rather than XSD schemas or
+        rule-pack definitions; use structural XML validators for XSD
+        conformance and `validate_profile_definition` for rule-pack JSON.
 
     Behavioral transparency:
         - Deterministic: Identical payload and profile_id produce identical
@@ -262,7 +263,8 @@ def validate_profile_definition(
         rule packs into the engine.
 
     When NOT to use:
-        Do not use to validate payment messages; use `lint_payload` instead.
+        Checks profile and rule-pack JSON schemas only, not ISO 20022
+        payment messages; use `lint_payload` to evaluate payment payloads.
 
     Behavioral transparency:
         - Deterministic: Evaluates strictly according to the Pydantic profile
