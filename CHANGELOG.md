@@ -5,42 +5,54 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.0.7] - 2026-11-13
 
 ### Fixed
 
 - Reworded cross-tool imperatives in MCP tool descriptions (`list_profiles`,
   `get_profile`, `lint_payload`, and `validate_profile_definition`) into
-  declarative scope boundaries so each tool governs only itself and clears
-  `passmcp` `catalog.text.shadowing` checks.
+  declarative scope boundaries with a catalogue vocabulary regression test so
+  each tool governs only itself and reaches `passmcp` `100/100` (Grade `A`)
+  conformance (#73).
+- Restored valid JSON structure in `glama.json` and aligned the HTTP transport
+  type hint with `MCPServer` from the SDK compatibility layer (#50).
 
 ### Changed
 
-- CI and release workflows: `github/codeql-action` 4.39.3 and
-  `sigstore/cosign-installer` 4.1.3 (#69).
+- Added a stable `Test (all)` aggregate check job in CI so branch protection
+  has one required check name across Python matrix updates (#66).
+- CI and release workflows: updated `actions/checkout` to v7,
+  `actions/setup-python` to v7, `actions/deploy-pages` to 5.0.1,
+  `actions/setup-node` to 7.1.0, `pypa/gh-action-pypi-publish` to 1.14.3,
+  `anchore/sbom-action` to 0.24.3, `actions/upload-artifact` to 7.0.2,
+  `ossf/scorecard-action` to 2.5.0, `github/codeql-action` to 4.39.3, and
+  `sigstore/cosign-installer` to 4.1.3 (#59, #69).
 - Dependencies and hash-pinned requirement sets: `pydantic` 2.14.3, `ruff`
   0.17.4 in `requirements/lint.{in,txt}` (0.17.5 in `poetry.lock`),
   `pytest-asyncio` 1.4.1.post1 in `requirements/test.txt` (1.5.0 in
   `poetry.lock`), and `cyclonedx-bom` 8.0.1 in `requirements/sbom.txt` while
-  pruning orphaned `cyclonedx-bom` entries from `poetry.lock` (#70, #71, #72).
+  pruning orphaned `cyclonedx-bom` entries from `poetry.lock` (#67, #70, #71,
+  #72).
 
 ### Security
 
+- Upgraded `anyio`, `pyjwt`, `urllib3`, and `httpx` to patched releases across
+  locked requirement trees (#50).
 - The release tooling (`requirements/build.txt`) keeps `virtualenv >= 21.14.13`
   (GHSA-cx6f-vjhg-g3cc) and floors `filelock >= 4.2.1`
   (GHSA-9vhv-jxww-xfm5, GHSA-567q-5qvw-pf92, GHSA-v4x8-3wr5-3wq8; it pinned
-  4.0.10) and `certifi >= 2026.10.19` (PYSEC-2026-4320). filelock 4.2.1
+  4.0.10) and `certifi >= 2026.10.19` (PYSEC-2026-4320). `filelock` 4.2.1
   needs Python 3.11 and only 3.12 jobs install the tree, so it is compiled
-  for 3.12.
+  for 3.12 (#57, #58, #64).
 - The release SBOM job points `cyclonedx-py environment` and `pip-licenses`
   at the Poetry venv (`poetry env info --executable`). Run through `poetry
   run`, they described their own interpreter, so the SBOM listed the SBOM
-  tooling instead of the runtime set.
+  tooling instead of the runtime set (#64).
 - `mcp >= 1.30.0, != 2.0.*, != 2.1.*` (GHSA-84m7-p3x7-pcfv), so neither
   affected range can resolve. Also `opentelemetry-api >= 1.45.1`
   (GHSA-xcq7-p3pf-p88h) and `certifi >= 2026.10.19` (PYSEC-2026-4320), in
-  `pyproject.toml` and the test, lint and docs trees; black moves to 26.10.1
-  (CVE-2026-114134).
+  `pyproject.toml` and the test, lint and docs trees; `black` moves to 26.10.1
+  (CVE-2026-114134) (#53, #64).
 
 ## [0.0.6] - 2026-10-03
 
@@ -256,5 +268,10 @@ serves, ahead of the November 2026 ISO 20022 milestones.
   every GitHub release; NIST SP 800-218 SSDF practice mapping in
   `SECURITY.md`; MCP registry + Glama directory manifests.
 
+[0.0.7]: https://github.com/sebastienrousseau/iso20022-bank-profile-mcp/compare/v0.0.6...v0.0.7
+[0.0.6]: https://github.com/sebastienrousseau/iso20022-bank-profile-mcp/compare/v0.0.5...v0.0.6
+[0.0.5]: https://github.com/sebastienrousseau/iso20022-bank-profile-mcp/compare/v0.0.4...v0.0.5
+[0.0.4]: https://github.com/sebastienrousseau/iso20022-bank-profile-mcp/compare/v0.0.3...v0.0.4
+[0.0.3]: https://github.com/sebastienrousseau/iso20022-bank-profile-mcp/compare/v0.0.2...v0.0.3
 [0.0.2]: https://github.com/sebastienrousseau/iso20022-bank-profile-mcp/releases/tag/v0.0.2
 [0.0.1]: https://github.com/sebastienrousseau/iso20022-bank-profile-mcp/releases/tag/v0.0.1
